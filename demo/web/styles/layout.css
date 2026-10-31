@@ -19,7 +19,6 @@
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   grid-template-areas:
     "viewport conversation"
-    "face     conversation"
     "pipeline pipeline";
   gap: 14px;
   max-width: 1240px;
@@ -28,7 +27,6 @@
 }
 .area-viewport { grid-area: viewport; }
 .area-conversation { grid-area: conversation; }
-.area-face { grid-area: face; }
 .area-pipeline { grid-area: pipeline; }
 
 .card {
@@ -55,7 +53,7 @@
 @media (max-width: 920px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "viewport" "conversation" "face" "pipeline";
+    grid-template-areas: "viewport" "conversation" "pipeline";
   }
 }
 @media (max-width: 560px) {

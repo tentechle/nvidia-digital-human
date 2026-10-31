@@ -1,10 +1,15 @@
-// Connect / disconnect a LiveTalking server and choose where answers come from.
-// Owns the connection, and tells the runner which speaker and answer mode to use.
+// Connects to the LiveTalking server (automatically on page load) and shows its
+// photoreal avatar, and chooses where answers come from. Tells the runner which
+// speaker to use; while the server is offline, answers are read by the browser.
 import { LiveTalkingClient } from "../live/livetalking-client.js";
 import { createLiveSpeaker } from "../live/speakers.js";
 import { load, save } from "../core/storage.js";
 
 const DEFAULT_URL = "http://127.0.0.1:8010";
+// Browsers report "disconnected" a few seconds after the server goes away, but
+// only reach "failed" after ~30 s. "disconnected" can also be a brief network
+// blip, so give it a short grace period before giving up.
+const DROP_GRACE_MS = 4000;
 
 function describeConfig(cfg) {
   if (!cfg) return "server details unavailable";
@@ -19,6 +24,11 @@ export function mountLivePanel(els, { bus, browserSpeaker, isBusy }) {
   els.url.value = load("liveUrl", DEFAULT_URL);
 
   const setStatus = (state, text) => { els.status.dataset.state = state; els.status.textContent = text; };
+  const setOverlay = (title, text) => {
+    els.overlay.hidden = !title;
+    els.overlayTitle.textContent = title ?? "";
+    els.overlayText.textContent = text ?? "";
+  };
 
   function renderMode() {
     els.modes.querySelectorAll("button").forEach((b) => {
@@ -30,11 +40,17 @@ export function mountLivePanel(els, { bus, browserSpeaker, isBusy }) {
   function showVideo(stream) {
     els.video.srcObject = stream;
     els.video.hidden = !stream;
-    els.canvas.hidden = !!stream;
     if (stream) {
       els.video.muted = false;
       els.video.play().catch(() => {});
     }
+  }
+
+  function offline(reason) {
+    setOverlay(
+      reason ? "The avatar server is offline" : "Not connected",
+      `${reason ? `${reason} ` : ""}Start it with demo/server/start.sh, then press Connect. Until then, answers are read aloud by your browser.`,
+    );
   }
 
   function disconnect(reason) {
@@ -44,19 +60,16 @@ export function mountLivePanel(els, { bus, browserSpeaker, isBusy }) {
     showVideo(null);
     els.button.textContent = "Connect";
     els.url.disabled = false;
-    setStatus(reason ? "error" : "off", reason ?? "Not connected: using the wireframe face and your browser's voice.");
+    setStatus(reason ? "error" : "off", reason ?? "Disconnected.");
+    offline(reason);
     renderMode();
     bus.emit("live", { on: false });
   }
 
-  // Browsers report "disconnected" a few seconds after the server goes away, but
-  // only reach "failed" after ~30 s. "disconnected" can also be a brief network
-  // blip, so give it a short grace period before giving up.
-  const DROP_GRACE_MS = 4000;
   function watchConnection(pc) {
     let grace = null;
     const dropped = () => {
-      if (client?.pc === pc) disconnect("The connection to the avatar server dropped. Is it still running?");
+      if (client?.pc === pc) disconnect("The connection to the avatar server dropped.");
     };
     pc.addEventListener("connectionstatechange", () => {
       clearTimeout(grace);
@@ -75,6 +88,7 @@ export function mountLivePanel(els, { bus, browserSpeaker, isBusy }) {
     els.button.disabled = true;
     els.url.disabled = true;
     setStatus("connecting", "Connecting…");
+    setOverlay("Starting the live avatar…", `Connecting to ${url}`);
     try {
       client = new LiveTalkingClient(url);
       const stream = await client.connect();
@@ -82,6 +96,7 @@ export function mountLivePanel(els, { bus, browserSpeaker, isBusy }) {
       watchConnection(client.pc);
       liveSpeaker = createLiveSpeaker({ client, bus, label: cfg?.llm_provider ? `${cfg.llm_provider} server` : "avatar server" });
       showVideo(stream);
+      setOverlay(null);
       save("liveUrl", els.url.value);
       els.button.textContent = "Disconnect";
       setStatus("live", `Live: ${describeConfig(cfg)}`);
@@ -91,8 +106,9 @@ export function mountLivePanel(els, { bus, browserSpeaker, isBusy }) {
       client?.close();
       client = null;
       els.url.disabled = false;
-      const hint = err instanceof TypeError ? " Is the server running, and reachable from this page?" : "";
-      setStatus("error", `Could not connect: ${err.message}.${hint}`);
+      const reason = err instanceof TypeError ? "Couldn't reach it." : `${err.message}.`;
+      setStatus("error", `Could not connect: ${reason}`);
+      offline(reason);
     } finally {
       els.button.disabled = false;
     }
@@ -114,6 +130,7 @@ export function mountLivePanel(els, { bus, browserSpeaker, isBusy }) {
   });
   renderMode();
   addEventListener("pagehide", () => client?.close());
+  connect(); // the photoreal avatar is the page's avatar: connect straight away
 
   return {
     getSpeaker: () => liveSpeaker ?? browserSpeaker,

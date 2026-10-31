@@ -1,5 +1,5 @@
 // Two interchangeable "speakers" the runner can use for a turn:
-//   browser: the page's own speech synthesis, with the wireframe face
+//   browser: the page's own speech synthesis (fallback while the server is offline)
 //   live:    a LiveTalking server that speaks, lip-syncs and streams a real video
 //
 // Both take hooks { onFirstAudio(seconds), onSentence(text) } so the runner can
