@@ -1,0 +1,86 @@
+diff --git a/app.py b/app.py
+index 7e076c2..a52217b 100644
+--- a/app.py
++++ b/app.py
+@@ -206,7 +206,7 @@ def main():
+         loop = asyncio.new_event_loop()
+         asyncio.set_event_loop(loop)
+         loop.run_until_complete(runner.setup())
+-        site = web.TCPSite(runner, '0.0.0.0', opt.listenport)
++        site = web.TCPSite(runner, os.environ.get('LT_HOST', '127.0.0.1'), opt.listenport)  # local patch: localhost only by default
+         loop.run_until_complete(site.start())
+         if opt.transport=='rtcpush':
+             for k in range(opt.max_session):
+diff --git a/config.py b/config.py
+index c1e8dee..fc1a197 100644
+--- a/config.py
++++ b/config.py
+@@ -80,7 +80,7 @@ def parse_args():
+ 
+     # ─── LLM ──────────────────────────────────────────────────────────
+     parser.add_argument('--llm_provider', type=str, default='dashscope',
+-                        help="llm provider: dashscope/orcarouter")
++                        help="llm provider: dashscope/orcarouter/nvidia")
+     parser.add_argument('--llm_model', type=str, default='',
+                         help="llm model override, empty = provider default (qwen-plus / orcarouter/auto)")
+ 
+diff --git a/llm.py b/llm.py
+index b650cba..7bd97d9 100644
+--- a/llm.py
++++ b/llm.py
+@@ -18,8 +18,21 @@ LLM_PROVIDERS = {
+         "base_url": "https://api.orcarouter.ai/v1",
+         "default_model": "orcarouter/auto",
+     },
++    # NVIDIA API catalog (build.nvidia.com). Get a key there and set NVIDIA_API_KEY.
++    "nvidia": {
++        "api_key_env": "NVIDIA_API_KEY",
++        "base_url": "https://integrate.api.nvidia.com/v1",
++        "default_model": "nvidia/llama-3.1-nemotron-70b-instruct",
++        "system_prompt": (
++            "You are a friendly assistant speaking out loud through a talking avatar. "
++            "Reply in the same language as the user, in two or three short spoken sentences. "
++            "Use plain text only: no markdown, lists, emoji or code."
++        ),
++    },
+ }
+ 
++DEFAULT_SYSTEM_PROMPT = '你是一个知识助手，尽量以简短、口语化的方式输出'
++
+ 
+ def _llm_provider(opt) -> str:
+     """Return the configured provider name, defaulting to dashscope."""
+@@ -45,6 +58,10 @@ def _llm_model(opt) -> str:
+ def llm_response(message,avatar_session:'BaseAvatar',datainfo:dict={}):
+     try:
+         opt = avatar_session.opt
++        cfg = LLM_PROVIDERS.get(_llm_provider(opt), LLM_PROVIDERS['dashscope'])
++        if not os.getenv(cfg['api_key_env']):
++            logger.error(f"llm: {cfg['api_key_env']} is not set; add it to .env and restart")
++            return
+         start = time.perf_counter()
+         client = _llm_client(opt)
+         model = _llm_model(opt)
+@@ -52,7 +69,7 @@ def llm_response(message,avatar_session:'BaseAvatar',datainfo:dict={}):
+         logger.info(f"llm Time init: {end-start}s,{message}")
+         completion = client.chat.completions.create(
+             model=model,
+-            messages=[{'role': 'system', 'content': '你是一个知识助手，尽量以简短、口语化的方式输出'},
++            messages=[{'role': 'system', 'content': cfg.get('system_prompt', DEFAULT_SYSTEM_PROMPT)},
+                     {'role': 'user', 'content': message}],
+             stream=True,
+             # Display token usage in the last line of the streamed response.
+diff --git a/server/routes.py b/server/routes.py
+index 8037d06..2a3520a 100644
+--- a/server/routes.py
++++ b/server/routes.py
+@@ -163,7 +163,8 @@ async def sse_handler(request):
+             'Content-Type': 'text/event-stream',
+             'Cache-Control': 'no-cache',
+             'Connection': 'keep-alive',
+-            'Access-Control-Allow-Origin': '*',
++            # No Access-Control-Allow-Origin here: aiohttp_cors (set up in app.py) adds it,
++            # and asserts it isn't already present, which broke SSE for cross-origin pages.
+         }
+     )
+     await response.prepare(request)
