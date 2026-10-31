@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Step through one conversational turn of NVIDIA's Tokkio digital human workflow, simulated in the browser.">
+  <title>Tokkio Pipeline Explorer</title>
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/layout.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__title">
+      <h1>Tokkio pipeline explorer</h1>
+      <p>One conversational turn of NVIDIA's digital human workflow, simulated in your browser.</p>
+    </div>
+    <nav class="topbar__links" aria-label="References">
+      <a href="https://github.com/NVIDIA-AI-Blueprints/digital-human">Blueprint</a>
+      <a href="https://docs.nvidia.com/ace/tokkio/5.0/quickstart-guide.html">Docs</a>
+      <a href="https://github.com/tentechle/nvidia-digital-human">Lab copy</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section class="card area-viewport" aria-labelledby="viewport-title">
+      <div class="card__head">
+        <h2 id="viewport-title">Avatar</h2>
+        <span class="status" id="status" data-state="idle">Idle</span>
+      </div>
+      <div class="viewport">
+        <canvas id="avatar" role="img" aria-label="Wireframe face animated by blendshape weights"></canvas>
+        <p class="viewport__caption" id="caption" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="card area-conversation" aria-labelledby="conversation-title">
+      <div class="card__head">
+        <h2 id="conversation-title">Conversation</h2>
+      </div>
+      <ol class="transcript" id="transcript"></ol>
+      <div class="suggestions" id="suggestions" aria-label="Suggested questions"></div>
+      <form class="composer" id="composer">
+        <input id="question" type="text" aria-label="Your question" placeholder="Ask a question" autocomplete="off" maxlength="200">
+        <button class="button button--primary" id="send" type="submit">Send</button>
+      </form>
+      <div class="voice-settings" id="voiceSettings">
+        <label class="field">
+          <span>Voice</span>
+          <select id="voiceSelect"></select>
+        </label>
+        <label class="field field--rate">
+          <span>Speed <output id="rateOut">0.88x</output></span>
+          <input id="rate" type="range" min="0.7" max="1.2" step="0.02">
+        </label>
+        <div class="voice-settings__actions">
+          <button class="button" id="soundToggle" type="button" aria-pressed="true">Sound on</button>
+          <button class="button" id="voicePreview" type="button">Preview voice</button>
+        </div>
+        <p class="voice-settings__note">Voices come from your browser and system. Ones marked Natural or Google usually sound clearest.</p>
+      </div>
+    </section>
+
+    <section class="card area-face" aria-labelledby="face-title">
+      <div class="card__head">
+        <h2 id="face-title">Blendshape weights</h2>
+        <div class="segmented" id="expressions" role="group" aria-label="Expression preset"></div>
+      </div>
+      <dl class="meters" id="meters"></dl>
+    </section>
+
+    <section class="card area-pipeline" aria-labelledby="pipeline-title">
+      <div class="card__head">
+        <h2 id="pipeline-title">Pipeline</h2>
+        <button class="button button--quiet" id="clearTrace" type="button">Clear log</button>
+      </div>
+      <ol class="stages" id="stages"></ol>
+      <p class="stage-detail" id="stageDetail">Select a stage to see what the real component does.</p>
+      <div class="trace" id="trace" role="log" aria-label="Pipeline event log"></div>
+    </section>
+  </main>
+
+  <footer class="footnote">
+    Replies are scripted, and speech uses your browser's voices. Nothing you type leaves this page.
+    The real blueprint runs on NVIDIA GPUs.
+  </footer>
+</body>
+</html>

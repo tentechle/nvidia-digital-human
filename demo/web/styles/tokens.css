@@ -1,0 +1,61 @@
+/* Design tokens and base element styles. */
+:root {
+  --bg: #f4f4f2;
+  --surface: #ffffff;
+  --surface-2: #f8f8f6;
+  --ink: #18191b;
+  --muted: #676a71;
+  --line: #e2e2de;
+  --accent: #1d7356;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2f0ea;
+  --warn: #9a6a00;
+  --viewport: #0d0e10;
+  --viewport-ink: #e6e9e7;
+
+  --radius: 10px;
+  --radius-sm: 7px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111214;
+    --surface: #18191c;
+    --surface-2: #1e1f23;
+    --ink: #e9e9e7;
+    --muted: #9b9ea5;
+    --line: #2b2d31;
+    --accent: #52c49b;
+    --accent-ink: #0d1411;
+    --accent-soft: #1b2b25;
+    --warn: #e0b04a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111214;
+  --surface: #18191c;
+  --surface-2: #1e1f23;
+  --ink: #e9e9e7;
+  --muted: #9b9ea5;
+  --line: #2b2d31;
+  --accent: #52c49b;
+  --accent-ink: #0d1411;
+  --accent-soft: #1b2b25;
+  --warn: #e0b04a;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font); }
+h1, h2, p { margin: 0; }
+a { color: inherit; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
