@@ -92,7 +92,7 @@ export function createVoice({ bus }) {
     const sentences = splitSentences(text);
     if (synth) synth.cancel(); // clears a queue Chrome sometimes leaves stuck
     for (let i = 0; i < sentences.length && !cancelled; i++) {
-      onSentence?.(i + 1, sentences.length);
+      onSentence?.(i + 1, sentences.length, sentences[i]);
       bus.emit("speech:sentence", { text: sentences[i] });
       bus.emit("speech:active", { on: true, rate: settings.rate });
       await (aloud() ? speakAloud(sentences[i]) : speakSilently(sentences[i]));

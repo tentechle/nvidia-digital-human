@@ -10,6 +10,8 @@ import { mountTrace } from "./ui/trace.js";
 import { mountStages } from "./ui/stages-bar.js";
 import { mountMeters } from "./ui/blendshape-meters.js";
 import { mountVoiceSettings } from "./ui/voice-settings.js";
+import { mountLivePanel } from "./ui/live-panel.js";
+import { createBrowserSpeaker } from "./live/speakers.js";
 
 const $ = (sel) => document.querySelector(sel);
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -17,7 +19,19 @@ const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const bus = createBus();
 const voice = createVoice({ bus });
 const avatar = createAvatar($("#avatar"), { reduceMotion });
-const runner = createRunner({ bus, voice, answer });
+
+// The runner asks the live panel which speaker to use: the browser's voice with the
+// wireframe face, or the LiveTalking server's photoreal video when connected.
+let runner = null;
+const live = mountLivePanel(
+  {
+    form: $("#liveConnect"), url: $("#liveUrl"), button: $("#liveButton"), status: $("#liveStatus"),
+    modes: $("#answerMode"), video: $("#liveVideo"), canvas: $("#avatar"),
+  },
+  { bus, browserSpeaker: createBrowserSpeaker(voice), isBusy: () => runner.isRunning() },
+);
+runner = createRunner({ bus, answer, getSpeaker: live.getSpeaker, getAnswerMode: live.getAnswerMode });
+bus.on("live", ({ on }) => { document.body.dataset.live = String(on); });
 
 const transcript = mountTranscript($("#transcript"), bus);
 mountTrace($("#trace"), $("#clearTrace"), bus);
@@ -50,7 +64,7 @@ const status = $("#status");
 const caption = $("#caption");
 const setStatus = (state, label) => { status.dataset.state = state; status.textContent = label; };
 bus.on("turn:start", () => { setStatus("thinking", "Thinking"); caption.textContent = ""; });
-bus.on("reply", () => setStatus("speaking", "Speaking"));
+bus.on("speech:active", ({ on }) => { if (on && runner.isRunning()) setStatus("speaking", "Speaking"); });
 bus.on("speech:sentence", ({ text }) => { caption.textContent = text; });
 bus.on("preview", (on) => { setStatus(on ? "speaking" : "idle", on ? "Speaking" : "Idle"); if (!on) caption.textContent = ""; });
 

@@ -32,6 +32,37 @@
   overflow: hidden;
 }
 .viewport canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.viewport__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.viewport [hidden] { display: none; }
+
+/* Live avatar connection */
+.live-connect { display: flex; gap: 8px; align-items: flex-end; }
+.live-connect .field { flex: 1; }
+.live-connect input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.live-connect input:disabled { color: var(--muted); }
+.live-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.live-status { font-size: 13px; color: var(--muted); flex: 1; min-width: 200px; overflow-wrap: anywhere; }
+.live-status[data-state="live"] { color: var(--ink); }
+.live-status[data-state="error"] { color: var(--warn); }
+.segmented button:disabled { opacity: 0.45; cursor: default; }
+
+/* While the live avatar is connected */
+.face-live-note, .voice-settings__live { display: none; font-size: 13px; color: var(--muted); }
+body[data-live="true"] .face-live-note,
+body[data-live="true"] .voice-settings__live { display: block; grid-column: 1 / -1; }
+body[data-live="true"] .meters,
+body[data-live="true"] #expressions { opacity: 0.35; pointer-events: none; }
+body[data-live="true"] .voice-settings .field,
+body[data-live="true"] .voice-settings__actions,
+body[data-live="true"] .voice-settings__note { display: none; }
 .viewport__caption {
   position: absolute;
   left: 12px;
