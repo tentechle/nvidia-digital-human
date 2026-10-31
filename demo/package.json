@@ -1,0 +1,10 @@
+{
+  "name": "nvidia-digital-human-demo",
+  "private": true,
+  "type": "module",
+  "description": "Browser demo of NVIDIA's Tokkio digital human pipeline, with an optional LiveTalking photoreal avatar.",
+  "scripts": {
+    "test": "node --test tests/",
+    "serve": "python3 -m http.server 8765 --bind 127.0.0.1 --directory web"
+  }
+}
